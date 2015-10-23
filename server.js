@@ -12,7 +12,7 @@ const producer = new HighLevelProducer(client);
 const models = require('./models');
 const VALIDATION_ERROR_NAME = 'ValidationError';
 const NOT_FOUND_ERROR_MESSAGE = 'NotFound';
-//const CONFLICT_ERROR_MESSAGE = 'Conflict';
+const DUPLICATE_ERROR_MESSAGE = 'Username and email already taken';
 
 app.use((req, res, next) => {
     const request_details = {
@@ -88,10 +88,49 @@ app.get('/api/users/:id', (req, res) => {
 app.post('/api/users', bodyParser.json(), (req, res) => {
     const user = req.body;
     const u = new models.User(user);
-    u.save(function(err, doc) {
+
+    /*
+    u.validate((err) => {
+        if(err) {
+            console.log(err);
+            if(err.code === 11000) {
+                res.status(409).send(DUPLICATE_ERROR_MESSAGE);
+            } else if(err.name === VALIDATION_ERROR_NAME) {
+                res.status(412).send(VALIDATION_ERROR_NAME);
+            } else {
+                res.status(500).send(err.name);
+            }
+        } else {
+            console.log('not err!');
+            u.save((err, doc) => {
+                console.log('TEST: ', doc);
+                if(err) {
+                    res.status(500).send(err.name);
+                } else {
+                    const data = [
+                        { topic: 'users', messages: JSON.stringify(user) }
+                    ];
+
+                    producer.send(data, (err, doc) => {
+                        if(!err) {
+                            res.status(201).send(doc);
+                        }
+                    });
+
+                }
+            });
+        }
+    });
+    */
+
+
+    u.save((err, doc) => {
         console.log(doc);
+        console.log(err);
         if (err) {
-            if(err.name === VALIDATION_ERROR_NAME) {
+            if(err.code === 11000) {
+                res.status(409).send(DUPLICATE_ERROR_MESSAGE);
+            } else if(err.name === VALIDATION_ERROR_NAME) {
                 res.status(412).send(err.name);
             } else {
                 res.status(500).send(err.name);
@@ -109,3 +148,5 @@ app.post('/api/users', bodyParser.json(), (req, res) => {
         }
     });
 });
+
+
