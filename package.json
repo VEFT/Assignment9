@@ -17,6 +17,8 @@
   },
   "homepage": "https://github.com/VEFT/Assignment9#readme",
   "dependencies": {
-    "kafka-node": "^0.2.29"
+    "express": "^4.13.3",
+    "kafka-node": "^0.2.29",
+    "nodemon": "^1.7.3"
   }
 }

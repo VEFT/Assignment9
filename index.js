@@ -1,32 +1,35 @@
 'use strict';
 
 const express = require('express');
-kafka = require('kafka-node');
-app = express();
-port = 4000;
+const kafka = require('kafka-node');
+const app = express();
+const port = 4000;
 const HighLevelProducer = kafka.HighLevelProducer;
 const client = new kafka.Client('localhost:2181');
 const producer = new HighLevelProducer(client);
 
 app.use((req, res, next) => {
     const request_details = {
-        'path': req.path,
-        'headers': req.headers,
-        'method': req.method
+        'timestamp'  : new Date(),
+        'path'       : req.path,
+        'headers'    : req.headers,
+        'method'     : req.method
     };
 
-    const data = [{
-        topic: 'requests',
-        messages: JSON.stringify(request_details)
-    }];
+    console.log("TEST: ", JSON.stringify(request_details));
+
+    const data = [
+        { topic: 'requests', messages: JSON.stringify(request_details) }
+    ];
 
     producer.send(data, (err, data) => {
-        if (err) {
+        if(err) {
             console.log('Error:', err);
-            return;
+            next();
+        } else {
+            console.log(data);
+            next();
         }
-        console.log(data);
-        next();
     });
 });
 
