@@ -1,5 +1,8 @@
 node_modules
 journal
 local.*
-mongod.lock
 storage.bson
+local.0
+local.ns
+mongod.lock
+assignment8.*
