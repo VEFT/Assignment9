@@ -38,10 +38,6 @@ app.use((req, res, next) => {
     });
 });
 
-app.get('/', (req, res) => {
-    res.send('Hello world3');
-});
-
 producer.on('ready', () => {
     console.log('Kafka producer is ready');
     mongoose.connect('localhost/app');
