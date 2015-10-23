@@ -16,7 +16,7 @@ app.use((req, res, next) => {
         'method'     : req.method
     };
 
-    console.log("TEST: ", JSON.stringify(request_details));
+    console.log('TEST: ', JSON.stringify(request_details));
 
     const data = [
         { topic: 'requests', messages: JSON.stringify(request_details) }
