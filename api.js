@@ -72,7 +72,6 @@ api.post('/users', bodyParser.json(), (req, res) => {
                     res.status(201).send(doc);
                 }
             });
-
         }
     });
 });
