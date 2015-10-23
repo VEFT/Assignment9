@@ -29,7 +29,7 @@ api.get('/users', (req, res) => {
 /* Fetches a given user that has been added to MongoDB by ID.
  * This endpoints return a single JSON document if found.
  * If no user is found by the ID then this endpoint returns response
- * wi=th a status code 404. No authentication is needed for this endpoint.
+ * with a status code 404. No authentication is needed for this endpoint.
  */
 api.get('/users/:id', (req, res) => {
     const id = req.params.id;
@@ -49,7 +49,7 @@ api.get('/users/:id', (req, res) => {
  * within the request body.
  * This endpoint is authenticated usding the ADMIN_TOKEN header.
  */
-api.post('/users=', bodyParser.json(), (req, res) => {
+api.post('/users', bodyParser.json(), (req, res) => {
     const user = req.body;
     const u = new models.User(user);
     u.save(function(err, doc) {
