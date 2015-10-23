@@ -11,8 +11,8 @@ const client = new kafka.Client('localhost:2181');
 const producer = new HighLevelProducer(client);
 const models = require('./models');
 const VALIDATION_ERROR_NAME = 'ValidationError';
-const NOT_FOUND_ERROR_MESSAGE = 'NotFound';
 const DUPLICATE_ERROR_MESSAGE = 'Username and email already taken';
+const INVALID_USERNAME_OR_PASSWORD = 'Invalid username or password';
 
 app.use((req, res, next) => {
     const request_details = {
@@ -28,7 +28,6 @@ app.use((req, res, next) => {
 
     producer.send(data, (err, data) => {
         if(err) {
-            console.log('Error:', err);
             next();
         } else {
             console.log(data);
@@ -48,34 +47,14 @@ mongoose.connection.once('open', () => {
     });
 });
 
-/* Returns a list of all users that are in the MongoDB. This endpoint
- * is not authenticated and the token value within the user document
- * must be removed from the document before it is written to the response.
- */
-app.get('/api/users', (req, res) => {
-    models.User.find({}, (err, docs) => {
-        if(err) {
-            res.status(500).send(err.name);
-        } else {
-            res.status(200).send(docs.map((val) => { val.token = undefined; return val; }));
-        }
-    });
-});
+app.post('/api/token', (req, res) => {
+    const user = req.body;
 
-/* Fetches a given user that has been added to MongoDB by ID.
- * This endpoints return a single JSON document if found.
- * If no user is found by the ID then this endpoint returns response
- * with a status code 404. No authentication is needed for this endpoint.
- */
-app.get('/api/users/:id', (req, res) => {
-    const id = req.params.id;
-    models.User.findOne({ _id : id }, (err, docs) => {
+    models.User.findOne(user, (err, docs) => {
         if(err) {
-            res.status(500).send(err.name);
-        } else if(!docs) {
-            res.status(404).send(NOT_FOUND_ERROR_MESSAGE);
+            res.status(401).send(INVALID_USERNAME_OR_PASSWORD);
         } else {
-            res.status(200).send(docs.map((val) => { val.token = undefined; return val; }));
+            res.status(200).send(docs.token);
         }
     });
 });
@@ -89,24 +68,20 @@ app.post('/api/users', bodyParser.json(), (req, res) => {
     const user = req.body;
     const u = new models.User(user);
 
-    /*
-    u.validate((err) => {
+    models.User.findOne({ $or:[ { username: u.username }, {email : user.email } ]}, (err, docs) => {
         if(err) {
-            console.log(err);
-            if(err.code === 11000) {
-                res.status(409).send(DUPLICATE_ERROR_MESSAGE);
-            } else if(err.name === VALIDATION_ERROR_NAME) {
-                res.status(412).send(VALIDATION_ERROR_NAME);
-            } else {
-                res.status(500).send(err.name);
-            }
-        } else {
-            console.log('not err!');
-            u.save((err, doc) => {
-                console.log('TEST: ', doc);
-                if(err) {
-                    res.status(500).send(err.name);
+            res.status(500).send(err.name);
+        } else if(!docs) {
+            u.save((err, savedoc) => {
+                if (err) {
+                    if(err.name === VALIDATION_ERROR_NAME) {
+                        res.status(412).send(err.name);
+                    } else {
+                        res.status(500).send(err.name);
+                    }
                 } else {
+                    user._id = savedoc._id;
+
                     const data = [
                         { topic: 'users', messages: JSON.stringify(user) }
                     ];
@@ -116,35 +91,10 @@ app.post('/api/users', bodyParser.json(), (req, res) => {
                             res.status(201).send(doc);
                         }
                     });
-
                 }
             });
-        }
-    });
-    */
-
-
-    u.save((err, doc) => {
-        console.log(doc);
-        console.log(err);
-        if (err) {
-            if(err.code === 11000) {
-                res.status(409).send(DUPLICATE_ERROR_MESSAGE);
-            } else if(err.name === VALIDATION_ERROR_NAME) {
-                res.status(412).send(err.name);
-            } else {
-                res.status(500).send(err.name);
-            }
         } else {
-            const data = [
-                { topic: 'users', messages: JSON.stringify(user) }
-            ];
-
-            producer.send(data, (err, doc) => {
-                if(!err) {
-                    res.status(201).send(doc);
-                }
-            });
+            res.status(409).send(DUPLICATE_ERROR_MESSAGE);
         }
     });
 });
