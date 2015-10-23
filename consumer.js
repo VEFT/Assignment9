@@ -7,7 +7,7 @@ let numberOfRequests = 0;
 const consumer = new HighLevelConsumer(client,
     [
         {
-            topic: 'requests'
+            topic: 'users'
         }
     ],
     {
