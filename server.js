@@ -52,7 +52,7 @@ mongoose.connection.once('open', () => {
  * is not authenticated and the token value within the user document
  * must be removed from the document before it is written to the response.
  */
-app.get('/users', (req, res) => {
+app.get('/api/users', (req, res) => {
     models.User.find({}, (err, docs) => {
         if(err) {
             res.status(500).send(err.name);
@@ -67,7 +67,7 @@ app.get('/users', (req, res) => {
  * If no user is found by the ID then this endpoint returns response
  * with a status code 404. No authentication is needed for this endpoint.
  */
-app.get('/users/:id', (req, res) => {
+app.get('/api/users/:id', (req, res) => {
     const id = req.params.id;
     models.User.findOne({ _id : id }, (err, docs) => {
         if(err) {
@@ -85,7 +85,7 @@ app.get('/users/:id', (req, res) => {
  * within the request body.
  * This endpoint is authenticated usding the ADMIN_TOKEN header.
  */
-app.post('/users', bodyParser.json(), (req, res) => {
+app.post('/api/users', bodyParser.json(), (req, res) => {
     const user = req.body;
     const u = new models.User(user);
     u.save(function(err, doc) {
@@ -106,7 +106,6 @@ app.post('/users', bodyParser.json(), (req, res) => {
                     res.status(201).send(doc);
                 }
             });
-
         }
     });
 });
