@@ -16,7 +16,8 @@ const consumer = new HighLevelConsumer(client,
     ],
     {
         groupId: 'mygroup'
-    });
+    }
+);
 
 
 mongoose.connect('localhost/app');

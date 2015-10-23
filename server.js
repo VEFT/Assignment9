@@ -47,6 +47,12 @@ mongoose.connection.once('open', () => {
     });
 });
 
+
+/* An endpoint where a user can post a JSON payload on the form
+ * { 'username': ..., 'password': ... }
+ * If the username and password is correct, then the token is sent back in the response.
+ * If not, the endpoint returns back status code 401.
+ */
 app.post('/api/token', (req, res) => {
     const user = req.body;
 
@@ -59,19 +65,24 @@ app.post('/api/token', (req, res) => {
     });
 });
 
-/* Allows administrators to add new users to MongoDB.
- * The user is posted with a POST method and the data sent as a JSON object
- * within the request body.
- * This endpoint is authenticated usding the ADMIN_TOKEN header.
- */
+/* An endpoint for creating new users. After the user has been written to MongoDB
+ * the posted JSON object is written to a Kafka topic named users.
+ * The post payload includes at least the following fields: username, password, email and age.
+ * If the username or the email is already taken, the endpoint returns status code 409 with a relevant error message.
+ * If the new user is created then the API returns the status code 201.
+*/
 app.post('/api/users', bodyParser.json(), (req, res) => {
     const user = req.body;
     const u = new models.User(user);
 
+    /* We go through our users to try and see if a user already exists with
+     * this username or with this email.*/
     models.User.findOne({ $or:[ { username: u.username }, {email : user.email } ]}, (err, docs) => {
         if(err) {
             res.status(500).send(err.name);
-        } else if(!docs) {
+        }
+        /* If none existed with this username or email, then we can go ahead and continue */
+        else if(!docs) {
             u.save((err, savedoc) => {
                 if (err) {
                     if(err.name === VALIDATION_ERROR_NAME) {
@@ -93,7 +104,10 @@ app.post('/api/users', bodyParser.json(), (req, res) => {
                     });
                 }
             });
-        } else {
+        }
+        /* Else we already have a user with this username or email and send
+         * a 'duplicate' error and a conflict status code */
+        else {
             res.status(409).send(DUPLICATE_ERROR_MESSAGE);
         }
     });
