@@ -8,7 +8,17 @@ const UserSchema = mongoose.Schema({
         required: true,
         minlength: 1
     },
-    token: {
+    username: {
+        type: String,
+        required: true,
+        minlength: 1
+    },
+    password: {
+        type: String,
+        required: true,
+        minlength: 1
+    },
+    email: {
         type: String,
         required: true,
         minlength: 1
@@ -26,47 +36,7 @@ const UserSchema = mongoose.Schema({
     }
 });
 
-/*
-const CompanySchema = mongoose.Schema({
-    name: {
-        type: String,
-        required: true,
-        minlength: 1
-    },
-    description: {
-        type: String,
-        required: true,
-        minlength: 1
-    },
-    punchcard_lifetime: {
-        type: Number,
-        required: true
-    }
-});
-*/
-
-/*
-const PunchcardSchema = mongoose.Schema({
-    company_id: {
-        type: String,
-        required: true,
-        minlength: 1
-    },
-    user_id: {
-        type: String,
-        required: true,
-        minlength: 1
-    },
-    created: {
-        type: Date,
-        default: new Date()
-    }
-});
-*/
-
 module.exports = {
     User: mongoose.model('User', UserSchema)
-    //Company: mongoose.model('Company', CompanySchema),
-    //Punchcard: mongoose.model('Punchcard', PunchcardSchema)
 };
 
