@@ -1,16 +1,53 @@
 'use strict';
 
 const express = require('express');
-const bodyParser = require('body-parser');
-const models = require('./models');
+const mongoose = require('mongoose');
 const kafka = require('kafka-node');
-const api = express();
-const VALIDATION_ERROR_NAME = 'ValidationError';
-const NOT_FOUND_ERROR_MESSAGE = 'NotFound';
+const bodyParser = require('body-parser');
+const app = express();
+const port = 4000;
 const HighLevelProducer = kafka.HighLevelProducer;
 const client = new kafka.Client('localhost:2181');
 const producer = new HighLevelProducer(client);
+const api = require('./api');
+const models = require('./models');
+const VALIDATION_ERROR_NAME = 'ValidationError';
+const NOT_FOUND_ERROR_MESSAGE = 'NotFound';
 //const CONFLICT_ERROR_MESSAGE = 'Conflict';
+
+app.use((req, res, next) => {
+    const request_details = {
+        'timestamp'  : new Date(),
+        'path'       : req.path,
+        'headers'    : req.headers,
+        'method'     : req.method
+    };
+
+    const data = [
+        { topic: 'requests', messages: JSON.stringify(request_details) }
+    ];
+
+    producer.send(data, (err, data) => {
+        if(err) {
+            console.log('Error:', err);
+            next();
+        } else {
+            console.log(data);
+            next();
+        }
+    });
+});
+
+producer.on('ready', () => {
+    console.log('Kafka producer is ready');
+    mongoose.connect('localhost/app');
+    mongoose.connection.once('open', () => {
+        console.log('mongoose is connected');
+        app.listen(port, () => {
+            console.log('Server is on port:', port);
+        });
+    });
+});
 
 /* Returns a list of all users that are in the MongoDB. This endpoint
  * is not authenticated and the token value within the user document
@@ -53,6 +90,7 @@ api.post('/users', bodyParser.json(), (req, res) => {
     const user = req.body;
     const u = new models.User(user);
     u.save(function(err, doc) {
+        console.log(doc);
         if (err) {
             if(err.name === VALIDATION_ERROR_NAME) {
                 res.status(412).send(err.name);
@@ -65,10 +103,7 @@ api.post('/users', bodyParser.json(), (req, res) => {
             ];
 
             producer.send(data, (err, doc) => {
-                if(err) {
-                    console.log(err);
-                    //res.status(500).send(err.name);
-                } else {
+                if(!err) {
                     res.status(201).send(doc);
                 }
             });
@@ -76,5 +111,3 @@ api.post('/users', bodyParser.json(), (req, res) => {
         }
     });
 });
-
-module.exports = api;
