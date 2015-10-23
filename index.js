@@ -2,11 +2,16 @@
 
 const express = require('express');
 const kafka = require('kafka-node');
+const mongoose = require('mongoose');
 const app = express();
 const port = 4000;
 const HighLevelProducer = kafka.HighLevelProducer;
 const client = new kafka.Client('localhost:2181');
 const producer = new HighLevelProducer(client);
+const api = require('./api');
+
+// Direct all request with the prefix 'api' to 'api.js'.
+app.use('/api', api);
 
 app.use((req, res, next) => {
     const request_details = {
@@ -34,12 +39,16 @@ app.use((req, res, next) => {
 });
 
 app.get('/', (req, res) => {
-    res.send('Hello world');
+    res.send('Hello world3');
 });
 
 producer.on('ready', () => {
     console.log('Kafka producer is ready');
-    app.listen(port, () => {
-        console.log('Server starting on port', port);
+    mongoose.connect('localhost/app');
+    mongoose.connection.once('open', () => {
+        console.log('mongoose is connected');
+        app.listen(port, () => {
+            console.log('Server is on port:', port);
+        });
     });
 });
