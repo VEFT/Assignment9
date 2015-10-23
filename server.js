@@ -5,11 +5,10 @@ const mongoose = require('mongoose');
 const kafka = require('kafka-node');
 const bodyParser = require('body-parser');
 const app = express();
-const port = 4000;
+const port = 5000;
 const HighLevelProducer = kafka.HighLevelProducer;
 const client = new kafka.Client('localhost:2181');
 const producer = new HighLevelProducer(client);
-const api = require('./api');
 const models = require('./models');
 const VALIDATION_ERROR_NAME = 'ValidationError';
 const NOT_FOUND_ERROR_MESSAGE = 'NotFound';
@@ -24,7 +23,7 @@ app.use((req, res, next) => {
     };
 
     const data = [
-        { topic: 'requests', messages: JSON.stringify(request_details) }
+        { topic: 'users', messages: JSON.stringify(request_details) }
     ];
 
     producer.send(data, (err, data) => {
@@ -38,11 +37,11 @@ app.use((req, res, next) => {
     });
 });
 
-producer.on('ready', () => {
-    console.log('Kafka producer is ready');
-    mongoose.connect('localhost/app');
-    mongoose.connection.once('open', () => {
-        console.log('mongoose is connected');
+mongoose.connect('localhost/app');
+mongoose.connection.once('open', () => {
+    console.log('mongoose is connected');
+    producer.on('ready', () => {
+        console.log('Kafka producer is ready');
         app.listen(port, () => {
             console.log('Server is on port:', port);
         });
@@ -53,7 +52,7 @@ producer.on('ready', () => {
  * is not authenticated and the token value within the user document
  * must be removed from the document before it is written to the response.
  */
-api.get('/users', (req, res) => {
+app.get('/users', (req, res) => {
     models.User.find({}, (err, docs) => {
         if(err) {
             res.status(500).send(err.name);
@@ -68,7 +67,7 @@ api.get('/users', (req, res) => {
  * If no user is found by the ID then this endpoint returns response
  * with a status code 404. No authentication is needed for this endpoint.
  */
-api.get('/users/:id', (req, res) => {
+app.get('/users/:id', (req, res) => {
     const id = req.params.id;
     models.User.findOne({ _id : id }, (err, docs) => {
         if(err) {
@@ -86,7 +85,7 @@ api.get('/users/:id', (req, res) => {
  * within the request body.
  * This endpoint is authenticated usding the ADMIN_TOKEN header.
  */
-api.post('/users', bodyParser.json(), (req, res) => {
+app.post('/users', bodyParser.json(), (req, res) => {
     const user = req.body;
     const u = new models.User(user);
     u.save(function(err, doc) {
