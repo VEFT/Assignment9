@@ -21,6 +21,7 @@
     "express": "^4.13.3",
     "kafka-node": "^0.2.29",
     "mongoose": "^4.2.2",
+    "node-uuid": "^1.4.3",
     "nodemon": "^1.7.3"
   }
 }
